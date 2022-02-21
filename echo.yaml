@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: echo-v1
+  name: echo-v1
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 5678
+  selector:
+    app: echo-v1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: echo-v1
+    version: v1
+  name: echo-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo-v1
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: echo-v1
+        version: v1
+    spec:
+      containers:
+      - image: hashicorp/http-echo:0.2.3
+        imagePullPolicy: IfNotPresent
+        name: echo-v1
+        args:
+        - "-text=version-1"        
+        ports:
+        - containerPort: 5678
+          name: http
+          protocol: TCP
+        securityContext:
+          privileged: false
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: echo-debug-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "echo.validate.istio"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: echo-vs
+spec:
+  hosts:
+  - "echo.validate.istio"
+  gateways:
+  - echo-debug-gateway
+  http:
+  - route:
+    - destination:
+        host: echo-v1
+---

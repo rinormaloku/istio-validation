@@ -1,0 +1,29 @@
+apiVersion: batch/v1 
+kind: Job 
+metadata:   
+  name: solo-validate-istio-job
+  labels:
+    app: solo-validate-istio
+spec:   
+  template:     
+    metadata:       
+      name: solo-validate-istio
+      labels:
+        app: solo-validate-istio  
+    spec:       
+      serviceAccountName: solo-validate-istio
+      containers:       
+      - name: solo-validate-istio         
+        image: rinormaloku/solo-validate-istio
+        command: ["/bin/bash", "validate.sh"]
+        env:
+        - name: ISTIO_VERSION
+          value: "1.10.5"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "300Mi"
+          limits:
+            cpu: "500m"
+            memory: "700Mi"
+      restartPolicy: Never
